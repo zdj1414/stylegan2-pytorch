@@ -7,6 +7,7 @@ import math
 import torch
 import numpy as np
 from torchvision import utils
+from torch.utils.mobile_optimizer import optimize_for_mobile
 
 from model import Generator, Discriminator
 
@@ -266,7 +267,11 @@ if __name__ == "__main__":
         ckpt["d"] = d_state
 
     name = os.path.splitext(os.path.basename(args.path))[0]
-    torch.save(ckpt, name + ".pt")
+    #torch.save(ckpt, name + ".pt")
+    scripted_module = torch.jit.script(ckpt)
+    scripted_module.save(name + ".pt")
+    optimized_scripted_module = optimize_for_mobile(scripted_module)
+    optimized_scripted_module._save_for_lite_interpreter(name + ".ptl")
 
     batch_size = {256: 16, 512: 9, 1024: 4}
     n_sample = batch_size.get(size, 25)
